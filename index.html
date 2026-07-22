@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>For You, My Love</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   CONFIG-DRIVEN BIRTHDAY / GIFT WEBSITE
+   Semua konten dapat diubah lewat window.CONFIG di bagian
+   bawah file (script). Tidak perlu ubah HTML/CSS di bawah ini.
+   ========================================================= */
+
+:root{
+  --bg-1:#2B1025;
+  --bg-2:#3A1633;
+  --bg-3:#4A1D40;
+  --pink-soft:#F7C6D9;
+  --pink-rose:#E8879E;
+  --pink-baby:#FADDE7;
+  --white:#FFFFFF;
+  --glow-pink:rgba(232,135,158,.45);
+  --glow-purple:rgba(157,90,196,.4);
+  --font-head:'Playfair Display', serif;
+  --font-body:'Poppins', sans-serif;
+  --vh:1vh;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  font-family:var(--font-body);
+  color:var(--white);
+  background:linear-gradient(160deg,var(--bg-1),var(--bg-2) 55%,var(--bg-3));
+  overflow-x:hidden;
+  overscroll-behavior:none;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{font-family:var(--font-head);font-weight:600;}
+img{max-width:100%;display:block;}
+button{font-family:inherit;border:none;background:none;color:inherit;cursor:pointer;}
+::selection{background:var(--pink-rose);color:var(--bg-1);}
+
+/* ---------- performance base ---------- */
+.gpu{transform:translateZ(0);will-change:transform,opacity;}
+
+/* ---------- ambient background (glow / bokeh / particles) ---------- */
+#bg-ambient{
+  position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+  contain:layout style paint;
+}
+#bg-ambient .blob{
+  position:absolute;border-radius:50%;filter:blur(40px);
+  opacity:.5;will-change:transform;
+  animation:drift 22s ease-in-out infinite;
+  transform:translate3d(0,0,0);
+}
+#bg-ambient .blob.b1{width:55vw;height:55vw;left:-15vw;top:-10vw;background:radial-gradient(circle,var(--glow-pink),transparent 70%);}
+#bg-ambient .blob.b2{width:50vw;height:50vw;right:-20vw;top:20vh;background:radial-gradient(circle,var(--glow-purple),transparent 70%);animation-delay:-6s;}
+#bg-ambient .blob.b3{width:46vw;height:46vw;left:10vw;bottom:-15vw;background:radial-gradient(circle,var(--glow-pink),transparent 70%);animation-delay:-12s;}
+@keyframes drift{
+  0%,100%{transform:translate3d(0,0,0);}
+  50%{transform:translate3d(3%,-4%,0);}
+}
+#bg-particles{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden;}
+.spark{
+  position:absolute;border-radius:50%;background:var(--white);
+  opacity:0;
+  animation:sparkle linear infinite;
+  will-change:transform,opacity;
+}
+@keyframes sparkle{
+  0%{opacity:0;transform:translate3d(0,10vh,0) scale(.4);}
+  10%{opacity:.9;}
+  90%{opacity:.5;}
+  100%{opacity:0;transform:translate3d(var(--dx,0),-110vh,0) scale(1);}
+}
+#bg-flowers{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden;}
+.float-flower{
+  position:absolute;font-size:22px;opacity:.85;
+  animation:floaty linear infinite;
+  will-change:transform,opacity;
+}
+@keyframes floaty{
+  0%{transform:translate3d(0,110vh,0) rotate(0deg);opacity:0;}
+  8%{opacity:.9;}
+  92%{opacity:.7;}
+  100%{transform:translate3d(var(--dx,20px),-15vh,0) rotate(360deg);opacity:0;}
+}
+
+/* ---------- shared layout ---------- */
+.page{
+  position:relative;z-index:2;
+  min-height:100vh;min-height:calc(var(--vh) * 100);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:64px 24px;text-align:center;
+  contain:layout style;
+}
+/* render offscreen sections lazily so scroll stays smooth on low-end devices */
+#page-letter,#page-photos,#page-playlist{
+  content-visibility:auto;
+  contain-intrinsic-size:1px 900px;
+}
+.eyebrow{
+  font-size:12px;letter-spacing:.35em;text-transform:uppercase;color:var(--pink-soft);
+  opacity:.8;margin-bottom:14px;
+}
+.section-title{font-size:clamp(30px,7vw,46px);line-height:1.15;margin-bottom:10px;}
+.section-sub{color:var(--pink-baby);opacity:.75;font-weight:300;font-size:15px;margin-bottom:36px;max-width:420px;}
+
+.glass{
+  background:linear-gradient(160deg,rgba(255,255,255,.11),rgba(255,255,255,.04));
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:28px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35), 0 0 40px var(--glow-pink) inset;
+  contain:layout style paint;
+}
+
+/* music toggle floating button */
+#music-toggle{
+  position:fixed;right:18px;bottom:18px;z-index:50;
+  width:50px;height:50px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(58,26,45,.55);border:1px solid rgba(255,255,255,.2);
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+  font-size:20px;transition:transform .3s;
+}
+#music-toggle.playing{animation:spin 4s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* =========================================================
+   PAGE 1 — PASSWORD
+   ========================================================= */
+#page-password{
+  position:fixed;inset:0;z-index:100;
+  background:linear-gradient(160deg,var(--bg-1),var(--bg-2) 55%,var(--bg-3));
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .9s ease, visibility .9s ease;
+  padding:24px;
+}
+#page-password.hide{opacity:0;visibility:hidden;pointer-events:none;}
+.pass-card{
+  width:100%;max-width:290px;padding:28px 22px 24px;
+  display:flex;flex-direction:column;align-items:center;
+}
+.pass-icon{font-size:34px;margin-bottom:12px;animation:bob 3.5s ease-in-out infinite;filter:drop-shadow(0 0 10px var(--glow-pink));}
+@keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+.pass-card h1{font-size:21px;margin-bottom:5px;font-style:italic;}
+.pass-sub{font-size:12px;color:var(--pink-baby);opacity:.75;margin-bottom:18px;letter-spacing:.02em;}
+
+.dots{display:flex;gap:10px;margin-bottom:20px;}
+.dot{width:10px;height:10px;border-radius:50%;border:1.5px solid rgba(255,255,255,.5);transition:transform .25s cubic-bezier(.34,1.56,.64,1), background .25s ease, box-shadow .25s ease;}
+.dot.filled{background:var(--pink-rose);border-color:var(--pink-rose);box-shadow:0 0 10px var(--glow-pink);transform:scale(1.15);}
+
+.pass-card.shake{animation:shake .5s;}
+@keyframes shake{
+  10%,90%{transform:translate3d(-1px,0,0);}
+  20%,80%{transform:translate3d(2px,0,0);}
+  30%,50%,70%{transform:translate3d(-6px,0,0);}
+  40%,60%{transform:translate3d(6px,0,0);}
+}
+
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;max-width:220px;margin:0 auto;}
+.key{
+  position:relative;overflow:hidden;
+  aspect-ratio:1;border-radius:50%;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);
+  font-size:16px;font-weight:500;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .12s ease, background .2s ease, box-shadow .2s ease;
+}
+.key:active{transform:scale(.9);background:rgba(255,255,255,.16);box-shadow:0 0 20px var(--glow-pink);}
+.key .ripple{
+  position:absolute;border-radius:50%;background:rgba(255,255,255,.5);
+  transform:scale(0);animation:ripple .55s ease-out;pointer-events:none;
+}
+@keyframes ripple{to{transform:scale(3);opacity:0;}}
+.pass-hint{margin-top:20px;font-size:12px;color:var(--pink-baby);opacity:.6;}
+
+.bloom-flower{
+  position:fixed;font-size:20px;z-index:120;pointer-events:none;
+  animation:bloom-pop 1.4s ease forwards;
+}
+@keyframes bloom-pop{
+  0%{transform:translate(0,0) scale(0) rotate(0);opacity:0;}
+  15%{opacity:1;transform:scale(1.1) rotate(20deg);}
+  100%{transform:translate(var(--tx),var(--ty)) scale(.6) rotate(360deg);opacity:0;}
+}
+
+/* =========================================================
+   PAGE 3 — HERO
+   ========================================================= */
+.hero-name{
+  font-size:clamp(38px,11vw,72px);line-height:1.05;font-style:italic;
+  color:var(--pink-soft);
+  text-shadow:0 0 30px var(--glow-pink);
+}
+.split-char{display:inline-block;opacity:0;filter:blur(8px);transform:translateY(30px) scale(.8);
+  animation:char-in .8s cubic-bezier(.22,1,.36,1) forwards;}
+@keyframes char-in{to{opacity:1;filter:blur(0);transform:translateY(0) scale(1);}}
+.hero-date{margin-top:18px;font-size:14px;letter-spacing:.15em;color:var(--pink-baby);opacity:0;
+  animation:fade-up 1s ease forwards;animation-delay:1.6s;}
+@keyframes fade-up{from{opacity:0;transform:translateY(14px);}to{opacity:.85;transform:translateY(0);}}
+.scroll-cue{position:absolute;bottom:34px;font-size:11px;letter-spacing:.3em;color:var(--pink-baby);opacity:.6;
+  display:flex;flex-direction:column;align-items:center;gap:6px;}
+.scroll-cue .chev{animation:cue-bounce 1.8s ease-in-out infinite;}
+@keyframes cue-bounce{0%,100%{transform:translateY(0);opacity:.3;}50%{transform:translateY(6px);opacity:.9;}}
+
+/* =========================================================
+   PAGE 5 — LOVE LETTER
+   ========================================================= */
+.letter-tap{
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:14px;
+}
+.letter-heart{font-size:64px;filter:drop-shadow(0 0 16px var(--glow-pink));animation:heart-beat 2.4s ease-in-out infinite;}
+@keyframes heart-beat{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+.letter-tap span{font-size:12px;letter-spacing:.25em;text-transform:uppercase;color:var(--pink-baby);opacity:.7;}
+.letter-paper{
+  display:none;width:100%;max-width:420px;padding:34px 28px;border-radius:16px;
+  background:linear-gradient(180deg,#fff,#fdf3f6);color:#5a3140;text-align:left;
+  transform:translateY(60px) rotateX(-25deg);opacity:0;
+  box-shadow:0 30px 60px rgba(0,0,0,.4);
+}
+.letter-paper.show{
+  display:block;animation:letter-open .9s cubic-bezier(.22,1,.36,1) forwards;
+}
+@keyframes letter-open{to{transform:translateY(0) rotateX(0);opacity:1;}}
+.letter-paper .p{font-family:var(--font-head);font-style:italic;font-size:16px;line-height:1.75;margin-bottom:14px;min-height:1em;}
+.letter-paper .sign{margin-top:10px;font-size:14px;text-align:right;opacity:.75;}
+.caret{display:inline-block;width:2px;background:#5a3140;margin-left:2px;animation:blink 1s step-end infinite;}
+@keyframes blink{50%{opacity:0;}}
+
+/* =========================================================
+   PAGE 6 — PHOTO MEMORIES (scratch to reveal)
+   ========================================================= */
+.polaroid-stack{display:flex;flex-direction:column;gap:48px;width:100%;max-width:220px;}
+.polaroid{
+  position:relative;background:#fdf9f5;padding:14px 14px 46px;border-radius:4px;
+  box-shadow:0 20px 40px rgba(0,0,0,.4);
+  transform:rotate(var(--rot,-2deg));
+}
+.polaroid::before{
+  content:'';position:absolute;top:-14px;left:50%;transform:translateX(-50%) rotate(-3deg);
+  width:70px;height:22px;background:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.4);
+}
+.polaroid-photo-wrap{position:relative;width:100%;aspect-ratio:1/1;border-radius:2px;overflow:hidden;background:#ccc;contain:strict;}
+.polaroid-photo-wrap img{width:100%;height:100%;object-fit:cover;}
+.scratch-canvas{position:absolute;inset:0;touch-action:none;cursor:grab;}
+.polaroid-caption{
+  margin-top:12px;font-family:var(--font-head);font-style:italic;color:#5a3140;font-size:14px;
+  min-height:1.4em;text-align:center;
+}
+
+/* =========================================================
+   PAGE 7 — SPECIAL PLAYLIST
+   ========================================================= */
+.player-card{width:100%;max-width:380px;padding:34px 26px;}
+.disc-wrap{position:relative;width:180px;height:180px;margin:0 auto 20px;}
+.disc{
+  width:100%;height:100%;border-radius:50%;
+  background:repeating-radial-gradient(circle,#1a0a15 0 3px,#2a1220 3px 6px);
+  box-shadow:0 0 0 6px rgba(255,255,255,.05), 0 20px 40px rgba(0,0,0,.5);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .3s;
+}
+.disc.spinning{animation:spin-disc 6s linear infinite;}
+@keyframes spin-disc{to{transform:rotate(360deg);}}
+.disc-center{
+  width:56px;height:56px;border-radius:50%;overflow:hidden;
+  background:linear-gradient(140deg,var(--pink-rose),var(--pink-soft));
+  box-shadow:0 0 20px var(--glow-pink);
+}
+.disc-center img{width:100%;height:100%;object-fit:cover;}
+.viz{display:flex;align-items:flex-end;gap:3px;height:18px;justify-content:center;margin:6px 0 14px;}
+.viz span{width:3px;background:var(--pink-rose);border-radius:2px;animation:viz-bar 1s ease-in-out infinite;}
+.viz span:nth-child(1){animation-delay:0s;} .viz span:nth-child(2){animation-delay:.15s;}
+.viz span:nth-child(3){animation-delay:.3s;} .viz span:nth-child(4){animation-delay:.1s;}
+.viz span:nth-child(5){animation-delay:.25s;}
+.player-card.playing .viz span{animation-play-state:running;}
+.player-card:not(.playing) .viz span{animation-play-state:paused;height:4px !important;}
+@keyframes viz-bar{0%,100%{height:4px;}50%{height:18px;}}
+.track-title{font-size:19px;margin-bottom:2px;}
+.track-artist{font-size:13px;color:var(--pink-baby);opacity:.7;margin-bottom:18px;}
+.progress-row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--pink-baby);opacity:.8;margin-bottom:16px;}
+.progress-bar{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.15);position:relative;overflow:hidden;cursor:pointer;}
+.progress-fill{position:absolute;left:0;top:0;bottom:0;width:0%;background:linear-gradient(90deg,var(--pink-rose),var(--pink-soft));border-radius:2px;}
+.controls-row{display:flex;align-items:center;justify-content:center;gap:22px;margin-bottom:22px;}
+.ctrl-btn{font-size:20px;opacity:.85;transition:transform .15s;}
+.ctrl-btn:active{transform:scale(.85);}
+.play-btn{
+  width:58px;height:58px;border-radius:50%;font-size:22px;
+  background:radial-gradient(circle at 35% 30%,var(--pink-soft),var(--pink-rose));
+  display:flex;align-items:center;justify-content:center;color:var(--bg-1);
+  box-shadow:0 8px 24px var(--glow-pink);
+}
+.playlist-list{display:flex;flex-direction:column;gap:10px;text-align:left;}
+.track-row{
+  display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:16px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);
+  transition:background .2s;
+}
+.track-row.active{background:rgba(232,135,158,.18);border-color:var(--glow-pink);}
+.track-row .num{width:18px;font-size:13px;opacity:.6;}
+.track-row .meta{flex:1;}
+.track-row .meta .t{font-size:14px;}
+.track-row .meta .a{font-size:12px;opacity:.6;}
+.track-row .note{opacity:.6;}
+.yt-embed{width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;margin-bottom:16px;display:none;}
+.yt-embed.show{display:block;}
+.yt-embed iframe{width:100%;height:100%;border:0;}
+
+footer{padding:60px 24px 90px;text-align:center;font-size:12px;color:var(--pink-baby);opacity:.5;letter-spacing:.1em;position:relative;z-index:2;}
+
+@media (min-width:900px){
+  .section-title{font-size:56px;}
+  .polaroid-stack{max-width:260px;}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001s !important;animation-iteration-count:1 !important;transition-duration:.001s !important;}
+}
+</style>
+</head>
+<body>
+
+<div id="bg-ambient"><div class="blob b1 gpu"></div><div class="blob b2 gpu"></div><div class="blob b3 gpu"></div></div>
+<div id="bg-particles"></div>
+<div id="bg-flowers"></div>
+
+<!-- ================= PAGE 1 — PASSWORD ================= -->
+<section id="page-password">
+  <div class="pass-card glass" id="passCard">
+    <div class="pass-icon">🌸</div>
+    <h1>For You, My Love</h1>
+    <p class="pass-sub">Enter Our Secret Code</p>
+    <div class="dots" id="dots"></div>
+    <div class="keypad" id="keypad"></div>
+    <p class="pass-hint" id="passHint"></p>
+  </div>
+</section>
+
+<!-- main scrollable content, revealed after password -->
+<main id="mainContent" style="display:none;">
+
+  <!-- ================= PAGE 3 — HERO ================= -->
+  <section class="page" id="page-hero">
+    <p class="eyebrow" style="opacity:0;animation:fade-up 1s ease forwards;animation-delay:1.4s;">🌸 Your Special Day 🌸</p>
+    <h1 id="heroTitle" style="font-size:clamp(30px,8vw,48px);"></h1>
+    <h1 class="hero-name" id="heroName"></h1>
+    <p class="hero-date" id="heroDate"></p>
+    <div class="scroll-cue">SCROLL<span class="chev">⌄</span></div>
+  </section>
+
+  <!-- ================= PAGE 5 — LOVE LETTER ================= -->
+  <section class="page" id="page-letter">
+    <h2 class="section-title">A Letter For You</h2>
+    <div class="letter-tap" id="letterTap">
+      <div class="letter-heart">💗</div>
+      <span>Tap the heart to open</span>
+    </div>
+    <div class="letter-paper glass" id="letterPaper"></div>
+  </section>
+
+  <!-- ================= PAGE 6 — PHOTO MEMORIES ================= -->
+  <section class="page" id="page-photos">
+    <p class="eyebrow">A Collection of Memories</p>
+    <h2 class="section-title">Our Photo Memories</h2>
+    <p class="section-sub">Every picture tells a beautiful story.</p>
+    <div class="polaroid-stack" id="polaroidStack"></div>
+  </section>
+
+  <!-- ================= PAGE 7 — SPECIAL PLAYLIST ================= -->
+  <section class="page" id="page-playlist">
+    <p class="eyebrow">🌼 Our Songs</p>
+    <h2 class="section-title">Special Playlist</h2>
+    <p class="section-sub">Songs that always remind me of you.</p>
+    <div class="player-card glass" id="playerCard">
+      <div class="yt-embed" id="ytEmbed"></div>
+      <div class="disc-wrap">
+        <div class="disc" id="disc"><div class="disc-center" id="discCenter"></div></div>
+      </div>
+      <div class="track-title" id="trackTitle"></div>
+      <div class="track-artist" id="trackArtist"></div>
+      <div class="viz"><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="progress-row">
+        <span id="curTime">0:00</span>
+        <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+        <span id="durTime">0:00</span>
+      </div>
+      <div class="controls-row">
+        <button class="ctrl-btn" id="prevBtn">⏮</button>
+        <button class="play-btn" id="playBtn">▶</button>
+        <button class="ctrl-btn" id="nextBtn">⏭</button>
+      </div>
+      <div class="playlist-list" id="playlistList"></div>
+    </div>
+  </section>
+
+  <footer>Made with 💗 for someone special</footer>
+</main>
+
+<button id="music-toggle">🎵</button>
+
+<audio id="audioEl" preload="none"></audio>
+
+<script>
+/* =========================================================
+ * KONFIGURASI WEBSITE — UBAH SEMUA ISI DI SINI SAJA
+ * ========================================================= */
+window.CONFIG = {
+  // --- identitas & password ---
+  name: "Sayang",
+  birthdayDateLabel: "10 Juni · The Most Special Day",
+  password: "123456",              // 6 digit
+  passwordHint: "Hint: tanggal spesial kita 💕",
+
+  // --- toggle fitur (true/false) ---
+  enableMusic: true,
+  enableFlowers: true,
+  enableParticles: true,
+  enableScratch: true,
+  enableTyping: true,
+  enableLetter: true,
+  enablePlaylist: true,
+  enablePhoto: true,
+
+  // --- love letter: tiap paragraf muncul dengan efek ketik ---
+  letter: {
+    paragraphs: [
+      "Untukmu yang selalu membuat hari-hariku lebih berwarna,",
+      "Aku ingin kamu tahu betapa berartinya kamu bagiku. Terima kasih untuk semua tawa, cerita, dan kehangatan yang kamu bagi.",
+      "Semoga di hari spesialmu ini, semua doa dan harapanmu perlahan menjadi kenyataan."
+    ],
+    signature: "— Seragift.craft"
+  },
+
+  // --- foto: digosok dulu baru terlihat --
+  photos: [
+    { src: "https://cdn.discordapp.com/avatars/1385283460633202768/0245184840966f1745613eb2d60ab3a5.webp?size=1024", caption:"Our first date ❤️" },
+    { src: "https://cdn.discordapp.com/avatars/1424590989431144448/0aa188de179593e4d0e2f21a5e58f832.webp?size=1024", caption:"That perfect afternoon 🌇" },
+    { src: "https://cdn.discordapp.com/attachments/1504689466684473404/1528540032783220806/IMG-20260719-WA0003.jpg?ex=6a5ffcd6&is=6a5eab56&hm=4e944fadee66c2322649a19197ecb3e3f224db0570d4e272c3c12b6855509bc5&", caption:"Always laughing with you 😄" }
+  ],
+
+  // --- playlist: type = 'mp3' | 'youtube' | 'spotify' | 'tiktok' ---
+  playlist: [
+    { title:"Shape Of My Heart", artist:"Backstreet Boys", type:"mp3", url:"http://d.top4top.io/m_3853g4ss10.mp3", cover:"" },
+    { title:"Angel Baby", artist:"Troye Sivan", type:"mp3", url:"http://d.top4top.io/m_3853g4ss10.mp3", cover:"" },
+    { title:"Perfect", artist:"Ed Sheeran", type:"mp3", url:"http://d.top4top.io/m_3853g4ss10.mp3", cover:"" }
+  ]
+};
+
+/* =========================================================
+ * UTIL
+ * ========================================================= */
+const $ = (s,el=document)=>el.querySelector(s);
+const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
+function setVH(){document.documentElement.style.setProperty('--vh', (window.innerHeight*0.01)+'px');}
+setVH(); window.addEventListener('resize', setVH);
+
+/* =========================================================
+ * AMBIENT: floating flowers + sparkle particles
+ * ========================================================= */
+(function ambient(){
+  // scale ambient density by viewport + rough device capability so low-end
+  // phones stay smooth instead of dropping frames under too many DOM animations
+  const cores = navigator.hardwareConcurrency || 4;
+  const lowEnd = cores <= 4 || window.innerWidth < 400;
+  const densityFactor = lowEnd ? 0.4 : (window.innerWidth < 640 ? 0.65 : 0.85);
+
+  const flowerEmojis = ['🌸','🌷','🌹','🌻','💮','🌼','🏵️'];
+  if(CONFIG.enableFlowers){
+    const host = $('#bg-flowers');
+    const count = Math.round((window.innerWidth < 640 ? 8 : 14) * densityFactor);
+    const frag = document.createDocumentFragment();
+    for(let i=0;i<count;i++){
+      const f = document.createElement('div');
+      f.className='float-flower';
+      f.textContent = flowerEmojis[Math.floor(Math.random()*flowerEmojis.length)];
+      const dur = 16+Math.random()*14;
+      f.style.left = Math.random()*100+'vw';
+      f.style.fontSize = (14+Math.random()*14)+'px';
+      f.style.setProperty('--dx',(Math.random()*60-30)+'px');
+      f.style.animationDuration = dur+'s';
+      f.style.animationDelay = (-Math.random()*dur)+'s';
+      frag.appendChild(f);
+    }
+    host.appendChild(frag);
+  }
+  if(CONFIG.enableParticles){
+    const host = $('#bg-particles');
+    const count = Math.round((window.innerWidth < 640 ? 10 : 18) * densityFactor);
+    const frag = document.createDocumentFragment();
+    for(let i=0;i<count;i++){
+      const s = document.createElement('div');
+      s.className='spark';
+      const size = 2+Math.random()*3;
+      s.style.width = s.style.height = size+'px';
+      s.style.left = Math.random()*100+'vw';
+      const dur = 7+Math.random()*10;
+      s.style.setProperty('--dx',(Math.random()*40-20)+'px');
+      s.style.animationDuration = dur+'s';
+      s.style.animationDelay = (-Math.random()*dur)+'s';
+      frag.appendChild(s);
+    }
+    host.appendChild(frag);
+  }
+})();
+
+/* =========================================================
+ * PAGE 1 — PASSWORD
+ * ========================================================= */
+(function passwordGate(){
+  const dotsHost = $('#dots');
+  const keypad = $('#keypad');
+  const card = $('#passCard');
+  const pageEl = $('#page-password');
+  $('#passHint').textContent = CONFIG.passwordHint;
+
+  const target = String(CONFIG.password);
+  let entered = '';
+
+  for(let i=0;i<target.length;i++){
+    const d = document.createElement('div');
+    d.className='dot';
+    dotsHost.appendChild(d);
+  }
+
+  const keys = ['1','2','3','4','5','6','7','8','9','C','0','⌫'];
+  keys.forEach(k=>{
+    const btn = document.createElement('button');
+    btn.className='key';
+    btn.textContent = k;
+    btn.addEventListener('click', (e)=>handleKey(k,e,btn));
+    keypad.appendChild(btn);
+  });
+
+  function updateDots(){
+    $$('.dot',dotsHost).forEach((d,i)=> d.classList.toggle('filled', i < entered.length));
+  }
+
+  function ripple(btn,e){
+    const r = document.createElement('span');
+    r.className='ripple';
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width,rect.height);
+    r.style.width = r.style.height = size+'px';
+    const x = (e.touches? e.touches[0].clientX : e.clientX) - rect.left - size/2;
+    const y = (e.touches? e.touches[0].clientY : e.clientY) - rect.top - size/2;
+    r.style.left = x+'px'; r.style.top = y+'px';
+    btn.appendChild(r);
+    setTimeout(()=>r.remove(),600);
+  }
+
+  function vibrate(ms){ if(navigator.vibrate) navigator.vibrate(ms); }
+
+  function handleKey(k,e,btn){
+    ripple(btn,e); vibrate(8);
+    if(k==='C'){ entered=''; updateDots(); return; }
+    if(k==='⌫'){ entered = entered.slice(0,-1); updateDots(); return; }
+    if(entered.length >= target.length) return;
+    entered += k;
+    updateDots();
+    if(entered.length === target.length){
+      setTimeout(()=> entered === target ? success() : fail(), 180);
+    }
+  }
+
+  function fail(){
+    vibrate([40,40,40]);
+    card.classList.add('shake');
+    setTimeout(()=>{ card.classList.remove('shake'); entered=''; updateDots(); }, 500);
+  }
+
+  function success(){
+    vibrate(20);
+    bloomBurst();
+    setTimeout(()=>{
+      pageEl.classList.add('hide');
+      document.body.style.background = 'linear-gradient(160deg,#3a1a33,#4a1d40 55%,#5c2650)';
+      revealMain();
+    }, 700);
+  }
+
+  function bloomBurst(){
+    const emojis=['🌸','🌷','🌹','🌼','💮','✨'];
+    const cores = navigator.hardwareConcurrency || 4;
+    const count = (cores <= 4 || window.innerWidth < 400) ? 12 : 18;
+    for(let i=0;i<count;i++){
+      const el = document.createElement('div');
+      el.className='bloom-flower';
+      el.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+      const startX = window.innerWidth/2, startY = window.innerHeight/2;
+      el.style.left = startX+'px'; el.style.top = startY+'px';
+      const angle = Math.random()*Math.PI*2;
+      const dist = 120+Math.random()*260;
+      el.style.setProperty('--tx', Math.cos(angle)*dist+'px');
+      el.style.setProperty('--ty', Math.sin(angle)*dist - 60+'px');
+      el.style.animationDelay = (Math.random()*0.15)+'s';
+      document.body.appendChild(el);
+      setTimeout(()=>el.remove(),1600);
+    }
+  }
+})();
+
+/* =========================================================
+ * REVEAL MAIN CONTENT (straight after password, envelope removed)
+ * ========================================================= */
+function revealMain(){
+  $('#mainContent').style.display='block';
+  $('#mainContent').style.opacity='0';
+  requestAnimationFrame(()=>{
+    $('#mainContent').style.transition='opacity 1s ease';
+    $('#mainContent').style.opacity='1';
+  });
+  initHero();
+  initLetter();
+  initPhotos();
+  initPlaylist();
+}
+
+/* =========================================================
+ * PAGE 3 — HERO (split text reveal)
+ * ========================================================= */
+function initHero(){
+  const titleEl = $('#heroTitle');
+  const nameEl = $('#heroName');
+  const dateEl = $('#heroDate');
+  dateEl.textContent = CONFIG.birthdayDateLabel;
+
+  function splitAnim(el, text, baseDelay){
+    el.innerHTML='';
+    [...text].forEach((ch,i)=>{
+      const span=document.createElement('span');
+      span.className='split-char';
+      span.style.animationDelay = (baseDelay + i*0.045)+'s';
+      span.textContent = ch === ' ' ? '\u00A0' : ch;
+      el.appendChild(span);
+    });
+  }
+  splitAnim(titleEl,'Happy Birthday',0.1);
+  splitAnim(nameEl,CONFIG.name,0.9);
+}
+
+/* =========================================================
+ * PAGE 5 — LOVE LETTER (scroll trigger + typing)
+ * ========================================================= */
+function initLetter(){
+  if(!CONFIG.enableLetter) return;
+  const tapArea = $('#letterTap');
+  const paper = $('#letterPaper');
+  let opened = false;
+
+  function openLetter(){
+    if(opened) return;
+    opened = true;
+    tapArea.style.display='none';
+    paper.classList.add('show');
+    typeParagraphs();
+  }
+  tapArea.addEventListener('click', openLetter);
+
+  // auto-trigger on scroll into view as well
+  const obs = new IntersectionObserver((entries)=>{
+    entries.forEach(en=>{ if(en.isIntersecting && en.intersectionRatio>0.6){ /* wait for tap, just a gentle nudge */ } });
+  },{threshold:[0.6]});
+  obs.observe($('#page-letter'));
+
+  function typeParagraphs(){
+    let delay = 300;
+    CONFIG.letter.paragraphs.forEach((text,i)=>{
+      const p = document.createElement('div');
+      p.className='p';
+      paper.appendChild(p);
+      setTimeout(()=> typeInto(p,text,()=>{
+        if(i === CONFIG.letter.paragraphs.length-1){
+          const sig = document.createElement('div');
+          sig.className='sign';
+          sig.textContent = CONFIG.letter.signature;
+          paper.appendChild(sig);
+        }
+      }), delay);
+      delay += text.length*22 + 500;
+    });
+  }
+
+  function typeInto(el,text,done){
+    if(!CONFIG.enableTyping){ el.textContent=text; if(done)done(); return; }
+    let i=0;
+    const caret=document.createElement('span'); caret.className='caret';
+    function step(){
+      el.textContent = text.slice(0,i);
+      el.appendChild(caret);
+      i++;
+      if(i<=text.length){ setTimeout(step,22); }
+      else{ caret.remove(); if(done) done(); }
+    }
+    step();
+  }
+}
+
+/* =========================================================
+ * PAGE 6 — PHOTO MEMORIES (canvas scratch-to-reveal)
+ * ========================================================= */
+function initPhotos(){
+  if(!CONFIG.enablePhoto) return;
+  const host = $('#polaroidStack');
+  CONFIG.photos.forEach((photo,i)=>{
+    const card = document.createElement('div');
+    card.className='polaroid';
+    card.style.setProperty('--rot', (i%2===0? -3-Math.random()*3 : 3+Math.random()*3)+'deg');
+    card.innerHTML = `
+      <div class="polaroid-photo-wrap">
+        <img src="${photo.src}" alt="memory" loading="lazy" decoding="async" referrerpolicy="no-referrer" crossorigin="anonymous">
+        <canvas class="scratch-canvas"></canvas>
+      </div>
+      <div class="polaroid-caption"></div>`;
+    const imgEl = $('img',card);
+    imgEl.addEventListener('error', ()=>{
+      // some hosts block hotlinking with crossorigin set — retry once without it
+      if(imgEl.hasAttribute('crossorigin')){
+        imgEl.removeAttribute('crossorigin');
+        imgEl.src = photo.src;
+      }
+    }, {once:true});
+    host.appendChild(card);
+    if(CONFIG.enableScratch){
+      setupScratch(card, photo.caption);
+    } else {
+      typeCaption($('.polaroid-caption',card), photo.caption);
+      $('.scratch-canvas',card).remove();
+    }
+  });
+}
+
+function setupScratch(card, captionText){
+  const wrap = $('.polaroid-photo-wrap',card);
+  const canvas = $('.scratch-canvas',card);
+  const captionEl = $('.polaroid-caption',card);
+  const ctx = canvas.getContext('2d');
+  let revealed = false;
+
+  function sizeCanvas(){
+    const r = wrap.getBoundingClientRect();
+    canvas.width = r.width; canvas.height = r.height;
+    ctx.fillStyle = '#b7abb2';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='rgba(255,255,255,.85)';
+    ctx.font = '13px Poppins, sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('✦ Gosok untuk melihat ✦', canvas.width/2, canvas.height/2);
+    ctx.globalCompositeOperation='destination-out';
+  }
+  sizeCanvas();
+  window.addEventListener('resize', sizeCanvas);
+
+  let drawing=false;
+  function pos(e){
+    const r = canvas.getBoundingClientRect();
+    const p = e.touches ? e.touches[0] : e;
+    return { x: p.clientX-r.left, y: p.clientY-r.top };
+  }
+  function scratchAt(x,y){
+    ctx.beginPath();
+    ctx.arc(x,y,26,0,Math.PI*2);
+    ctx.fill();
+  }
+  function checkRevealed(){
+    if(revealed) return;
+    const data = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+    let cleared=0, total=data.length/4;
+    for(let i=3;i<data.length;i+=4*12){ if(data[i]===0) cleared++; }
+    const ratio = cleared/(total/12);
+    if(ratio > 0.55){
+      revealed = true;
+      canvas.style.transition='opacity .6s ease';
+      canvas.style.opacity='0';
+      setTimeout(()=>{ canvas.remove(); typeCaption(captionEl, captionText); }, 550);
+    }
+  }
+  let checkQueued=false;
+  function queueCheck(){
+    if(checkQueued) return;
+    checkQueued=true;
+    requestAnimationFrame(()=>{ checkRevealed(); checkQueued=false; });
+  }
+  function start(e){ drawing=true; const p=pos(e); scratchAt(p.x,p.y); }
+  function move(e){ if(!drawing) return; e.preventDefault(); const p=pos(e); scratchAt(p.x,p.y); queueCheck(); }
+  function end(){ drawing=false; checkRevealed(); }
+
+  canvas.addEventListener('mousedown',start);
+  canvas.addEventListener('mousemove',move);
+  window.addEventListener('mouseup',end);
+  canvas.addEventListener('touchstart',start,{passive:true});
+  canvas.addEventListener('touchmove',move,{passive:false});
+  canvas.addEventListener('touchend',end);
+}
+
+function typeCaption(el,text){
+  if(!CONFIG.enableTyping){ el.textContent=text; return; }
+  let i=0;
+  function step(){
+    el.textContent = text.slice(0,i)+'▌';
+    i++;
+    if(i<=text.length) setTimeout(step,35);
+    else el.textContent = text;
+  }
+  step();
+}
+
+/* =========================================================
+ * PAGE 7 — MUSIC PLAYER
+ * ========================================================= */
+function initPlaylist(){
+  if(!CONFIG.enablePlaylist || !CONFIG.playlist.length) return;
+  const audio = $('#audioEl');
+  const list = $('#playlistList');
+  const disc = $('#disc');
+  const playerCard = $('#playerCard');
+  const ytEmbed = $('#ytEmbed');
+  let idx = 0, isPlaying=false;
+
+  function detectType(track){
+    if(track.type) return track.type;
+    const u = (track.url||'').toLowerCase();
+    if(u.includes('youtube')||u.includes('youtu.be')) return 'youtube';
+    if(u.includes('spotify')) return 'spotify';
+    if(u.includes('tiktok')) return 'tiktok';
+    return 'mp3';
+  }
+  function ytId(url){
+    const m = url.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{11})/);
+    return m? m[1] : null;
+  }
+  function spotifyEmbed(url){
+    const m = url.match(/spotify\.com\/(track|episode)\/([\w]+)/);
+    return m ? `https://open.spotify.com/embed/${m[1]}/${m[2]}` : null;
+  }
+
+  function renderList(){
+    list.innerHTML='';
+    CONFIG.playlist.forEach((t,i)=>{
+      const row = document.createElement('div');
+      row.className='track-row'+(i===idx?' active':'');
+      row.innerHTML = `<span class="num">${i+1}</span><div class="meta"><div class="t">${t.title}</div><div class="a">${t.artist}</div></div><span class="note">♪</span>`;
+      row.addEventListener('click', ()=> loadTrack(i,true));
+      list.appendChild(row);
+    });
+  }
+
+  function fmt(s){
+    if(!isFinite(s)) return '0:00';
+    const m=Math.floor(s/60), sec=Math.floor(s%60);
+    return m+':'+String(sec).padStart(2,'0');
+  }
+
+  function loadTrack(i, autoplay){
+    idx = (i+CONFIG.playlist.length)%CONFIG.playlist.length;
+    const t = CONFIG.playlist[idx];
+    $('#trackTitle').textContent = t.title;
+    $('#trackArtist').textContent = t.artist;
+    renderList();
+
+    const type = detectType(t);
+    ytEmbed.classList.remove('show'); ytEmbed.innerHTML='';
+    audio.pause(); audio.src='';
+    disc.classList.remove('spinning'); playerCard.classList.remove('playing');
+    isPlaying=false; $('#playBtn').textContent='▶';
+
+    if(type==='youtube' && t.url){
+      const id = ytId(t.url);
+      if(id){
+        ytEmbed.classList.add('show');
+        ytEmbed.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?${autoplay?'autoplay=1&':''}rel=0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+      }
+      if(autoplay) setVisualPlaying(true);
+    } else if(type==='spotify' && t.url){
+      const embedUrl = spotifyEmbed(t.url);
+      if(embedUrl){
+        ytEmbed.classList.add('show');
+        ytEmbed.innerHTML = `<iframe src="${embedUrl}" allow="encrypted-media"></iframe>`;
+      }
+      if(autoplay) setVisualPlaying(true);
+    } else {
+      // any direct link (mp3, wav, ogg, cdn link, dst) or demo track without url
+      if(t.url) audio.src = t.url;
+      if(autoplay) playPause(true);
+    }
+  }
+
+  // toggles disc-spin / play icon / viz bars without touching <audio> (used for embeds)
+  function setVisualPlaying(state){
+    isPlaying = state;
+    playerCard.classList.toggle('playing', isPlaying);
+    disc.classList.toggle('spinning', isPlaying);
+    $('#playBtn').textContent = isPlaying ? '⏸' : '▶';
+  }
+
+  function playPause(force){
+    const t = CONFIG.playlist[idx];
+    const type = detectType(t);
+    if(type==='youtube' || type==='spotify'){
+      setVisualPlaying(force!==undefined ? force : !isPlaying);
+      return;
+    }
+    if(!t.url){
+      // demo mode: no real audio source configured, still animate disc/UI
+      setVisualPlaying(force!==undefined ? force : !isPlaying);
+      return;
+    }
+    if(force===false || (force===undefined && isPlaying)){
+      audio.pause();
+    } else {
+      audio.play().catch(()=> setVisualPlaying(true)); // still spin even if autoplay is blocked
+    }
+  }
+
+  audio.addEventListener('play', ()=>{ isPlaying=true; playerCard.classList.add('playing'); disc.classList.add('spinning'); $('#playBtn').textContent='⏸'; });
+  audio.addEventListener('pause', ()=>{ isPlaying=false; playerCard.classList.remove('playing'); disc.classList.remove('spinning'); $('#playBtn').textContent='▶'; });
+  audio.addEventListener('timeupdate', ()=>{
+    if(audio.duration){
+      $('#progressFill').style.width = (audio.currentTime/audio.duration*100)+'%';
+      $('#curTime').textContent = fmt(audio.currentTime);
+      $('#durTime').textContent = fmt(audio.duration);
+    }
+  });
+  audio.addEventListener('ended', ()=> loadTrack(idx+1,true));
+
+  $('#playBtn').addEventListener('click', ()=> playPause());
+  $('#prevBtn').addEventListener('click', ()=> loadTrack(idx-1,true));
+  $('#nextBtn').addEventListener('click', ()=> loadTrack(idx+1,true));
+  $('#progressBar').addEventListener('click', (e)=>{
+    if(!audio.duration) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    audio.currentTime = ((e.clientX-r.left)/r.width)*audio.duration;
+  });
+
+  loadTrack(0,false);
+}
+
+/* =========================================================
+ * BACKGROUND MUSIC TOGGLE (floating button)
+ * ========================================================= */
+(function bgMusicButton(){
+  const btn = $('#music-toggle');
+  if(!CONFIG.enableMusic){ btn.style.display='none'; return; }
+  let on=false;
+  btn.addEventListener('click', ()=>{
+    on=!on;
+    btn.classList.toggle('playing',on);
+    const audio = $('#audioEl');
+    if(on){ audio.play().catch(()=>{}); } else { audio.pause(); }
+  });
+})();
+</script>
+</body>
+</html>
